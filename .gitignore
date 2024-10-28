@@ -19,3 +19,7 @@ ModelAPI/llama-2-7b-chat-hf
 ModelAPI/Working
 
 UserData
+
+SystemAPI/app/__pycache__
+SystemAPI/app/migrations
+SystemAPI/venv
