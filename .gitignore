@@ -12,3 +12,10 @@ conversations.json
 Dataset.zip
 token.json
 Model
+Usuarios
+ModelAPI/__pycache__
+ModelAPI/depresslm
+ModelAPI/llama-2-7b-chat-hf
+ModelAPI/Working
+
+UserData
