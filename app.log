@@ -1,0 +1,13 @@
+2024-11-19 19:44:45,177 - INFO - Intentando obtener detalles del usuario con el token.
+2024-11-19 19:44:45,179 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5000
+2024-11-19 19:44:45,183 - DEBUG - http://127.0.0.1:5000 "GET /account/details HTTP/11" 422 40
+2024-11-19 19:44:45,184 - WARNING - Token inválido o caducado: 422. Mostrando pantalla de login.
+2024-11-19 19:44:45,184 - INFO - No se encontró un token válido. Mostrando pantalla de login.
+2024-11-19 19:44:50,737 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5000
+2024-11-19 19:44:50,835 - DEBUG - http://127.0.0.1:5000 "POST /login HTTP/11" 200 348
+2024-11-19 19:44:52,243 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5000
+2024-11-19 19:44:52,246 - DEBUG - http://127.0.0.1:5000 "GET /account/details HTTP/11" 422 40
+2024-11-19 19:45:07,260 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5000
+2024-11-19 19:45:07,357 - DEBUG - http://127.0.0.1:5000 "POST /login HTTP/11" 200 348
+2024-11-19 19:45:08,961 - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5000
+2024-11-19 19:45:08,964 - DEBUG - http://127.0.0.1:5000 "GET /account/details HTTP/11" 422 40

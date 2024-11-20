@@ -267,7 +267,7 @@ student_bp = Blueprint("student", __name__)
 
 
 @student_bp.route("/student/<int:boleta>", methods=["DELETE"])
-@admin_required
+@jwt_required()
 def delete_student(boleta):
     student = Estudiante.query.get(boleta)
     if not student:
@@ -279,7 +279,7 @@ def delete_student(boleta):
 
 
 @student_bp.route("/student", methods=["POST"])
-@admin_required
+@jwt_required()
 def create_student():
     data = request.get_json()
     boleta = data.get("boleta")
@@ -305,7 +305,7 @@ def create_student():
 
 
 @student_bp.route("/student/<int:boleta>", methods=["GET"])
-@admin_required
+@jwt_required()
 def get_student(boleta):
     student = Estudiante.query.get(boleta)
     if not student:
@@ -322,7 +322,7 @@ def get_student(boleta):
 
 
 @student_bp.route("/student/all", methods=["GET"])
-@admin_required
+@jwt_required()
 def get_student_list():
     limit = request.args.get("limit", type=int, default=10)
     students = Estudiante.query.limit(limit).all()
@@ -334,7 +334,7 @@ def get_student_list():
 
 
 @student_bp.route("/student", methods=["PUT"])
-@admin_required
+@jwt_required()
 def update_student():
     data = request.get_json()
     boleta = data.get("boleta")
@@ -353,7 +353,7 @@ def update_student():
 
 
 @student_bp.route("/student", methods=["GET"])
-@admin_required
+@jwt_required()
 def find_student_by_name():
     name = request.args.get("name", None)
     if not name:
@@ -391,7 +391,12 @@ def add_report():
 
     # profile_link = estudiante.perfil_facebook_actual
     # Obtener la respuesta del modelo de IA
-    texto_reporte = get_model_response("soobsluv.zip")
+    profile_link = request.json.get("profile_link")
+
+    if not profile_link:
+        return jsonify({"msg": "No se proporcionó perfil de facebook"}),400
+
+    texto_reporte = get_model_response(profile_link)
 
     # Verificar si la respuesta es un diccionario y contiene la clave "response"
     if "response" in texto_reporte.keys():
