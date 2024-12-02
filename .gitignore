@@ -17,9 +17,11 @@ ModelAPI/__pycache__
 ModelAPI/depresslm
 ModelAPI/llama-2-7b-chat-hf
 ModelAPI/Working
-
+depressionapp/node_modules
 UserData
-
+server/__pycache__
 SystemAPI/app/__pycache__
 SystemAPI/app/migrations
 SystemAPI/venv
+app.log
+TestCredentials.md

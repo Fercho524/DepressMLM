@@ -1,7 +1,7 @@
 import requests
 
 
-MODELSERVER_IP = "192.168.100.18"
+MODELSERVER_IP = "192.168.100.20"
 
 def get_model_response( profile_link):
     url = f"http://{MODELSERVER_IP}:5000/inference"  # URL del servidor Flask
@@ -25,7 +25,7 @@ def get_model_response( profile_link):
 
 # Ejemplo de uso
 if __name__ == "__main__":
-    ip_address = "192.168.100.18"  # Cambia esto a la IP de tu servidor
+    ip_address = "192.168.100.20"  # Cambia esto a la IP de tu servidor
     filename = "https://www.facebook.com/itziar.dom"  # Cambia esto al nombre del archivo ZIP que quieres subir
 
     response = get_model_response(filename)

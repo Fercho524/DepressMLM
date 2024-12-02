@@ -13,7 +13,8 @@ from config import Config
 
 # Aplicación
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
 app.config.from_object(Config)
 
 
@@ -38,4 +39,4 @@ app.register_blueprint(report_bp)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,host="0.0.0.0")

@@ -26,6 +26,21 @@ def admin_required(fn):
     return wrapper
 
 
+def psicologo_required(fn):
+    @wraps(fn)
+    @jwt_required()
+    def wrapper(*args, **kwargs):
+        current_user_id = get_jwt_identity()
+        current_user = Usuario.query.get(current_user_id)
+        
+        if not current_user or current_user.rol.nombre_rol != "Psicólogo":
+            return jsonify({"msg": "Acceso denegado: solo para psicólogos"}), 403
+
+        return fn(*args, **kwargs)
+    
+    return wrapper
+
+
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -49,7 +64,7 @@ def login():
     
     # Crear el token con el ID del usuario
     expires = timedelta(minutes=21600)
-    access_token = create_access_token(identity=user.id,expires_delta=expires)
+    access_token = create_access_token(identity=str(user.id),expires_delta=expires)
     return jsonify(access_token=access_token), 200
 
 
@@ -113,7 +128,10 @@ def update_account():
 @jwt_required()
 def account_details():
     # Obtener el ID del usuario actual a partir del token JWT
+    print("jij")
     current_user_id = get_jwt_identity()
+    
+    print(current_user_id)
     user = Usuario.query.get(current_user_id)
 
     # Verificar si el usuario existe
@@ -160,6 +178,7 @@ content_bp = Blueprint("other", __name__)
 @jwt_required()
 def get_sensitive_data():
     current_user_id = get_jwt_identity()
+    print(current_user_id)
     return jsonify({"msg": "Acceso permitido", "user_id": current_user_id}), 200
 
 
@@ -186,15 +205,25 @@ def delete_user(user_id):
 @admin_required
 def create_user():
     data = request.get_json()
+    
+    # Extraer datos con validación básica
     nombre = data.get("nombre")
     sexo = data.get("sexo")
     email = data.get("email")
     password = data.get("password")
     rol_id = data.get("rol_id")
     
+    # Verificar que todos los campos estén presentes y sean del tipo correcto
     if not all([nombre, sexo, email, password, rol_id]):
         return jsonify({"msg": "Faltan datos para crear el usuario"}), 400
-    
+    if not isinstance(nombre, str) or not isinstance(sexo, str) or not isinstance(email, str):
+        return jsonify({"msg": "Los campos 'nombre', 'sexo' y 'email' deben ser cadenas"}), 400
+    if not isinstance(password, str):
+        return jsonify({"msg": "La contraseña debe ser una cadena"}), 400
+    if not isinstance(rol_id, int):
+        return jsonify({"msg": "El ID del rol debe ser un entero"}), 400
+
+    # Crear nuevo usuario
     new_user = Usuario(nombre=nombre, sexo=sexo, email=email, rol_id=rol_id)
     new_user.set_password(password)
     
@@ -204,7 +233,7 @@ def create_user():
 
 
 @user_bp.route("/user/<int:user_id>", methods=["GET"])
-@admin_required
+@jwt_required()
 def get_user(user_id):
     user = Usuario.query.get(user_id)
     if not user:
@@ -218,6 +247,24 @@ def get_user(user_id):
         "rol_id": user.rol_id
     }
     return jsonify(user_data), 200
+
+
+@user_bp.route('/user/id', methods=['GET'])
+@jwt_required()
+def get_user_by_id():
+    current_user_id = get_jwt_identity()
+    current_user = Usuario.query.get(current_user_id)
+
+    if not current_user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    return jsonify({
+        "id": current_user.id,
+        "nombre": current_user.nombre,
+        "email": current_user.email,
+        "sexo": current_user.sexo,
+        "rol": current_user.rol.nombre_rol  # Se incluye el nombre del rol
+    })
 
 
 @user_bp.route("/user/all", methods=["GET"])
@@ -267,7 +314,7 @@ student_bp = Blueprint("student", __name__)
 
 
 @student_bp.route("/student/<int:boleta>", methods=["DELETE"])
-@jwt_required()
+@psicologo_required
 def delete_student(boleta):
     student = Estudiante.query.get(boleta)
     if not student:
@@ -279,7 +326,7 @@ def delete_student(boleta):
 
 
 @student_bp.route("/student", methods=["POST"])
-@jwt_required()
+@psicologo_required
 def create_student():
     data = request.get_json()
     boleta = data.get("boleta")
@@ -305,7 +352,7 @@ def create_student():
 
 
 @student_bp.route("/student/<int:boleta>", methods=["GET"])
-@jwt_required()
+@psicologo_required
 def get_student(boleta):
     student = Estudiante.query.get(boleta)
     if not student:
@@ -322,19 +369,19 @@ def get_student(boleta):
 
 
 @student_bp.route("/student/all", methods=["GET"])
-@jwt_required()
+@psicologo_required
 def get_student_list():
     limit = request.args.get("limit", type=int, default=10)
     students = Estudiante.query.limit(limit).all()
     students_data = [
-        {"boleta": student.boleta, "nombre": student.nombre, "email_saes": student.email_saes}
+        {"boleta": student.boleta, "nombre": student.nombre, "email_saes": student.email_saes, "prob_depresion" : student.prob_depresion}
         for student in students
     ]
     return jsonify(students_data), 200
 
 
 @student_bp.route("/student", methods=["PUT"])
-@jwt_required()
+@psicologo_required
 def update_student():
     data = request.get_json()
     boleta = data.get("boleta")
@@ -353,7 +400,7 @@ def update_student():
 
 
 @student_bp.route("/student", methods=["GET"])
-@jwt_required()
+@psicologo_required
 def find_student_by_name():
     name = request.args.get("name", None)
     if not name:
@@ -375,7 +422,7 @@ report_bp = Blueprint("report", __name__)
 
 
 @report_bp.route("/report", methods=["POST"])
-@jwt_required()
+@psicologo_required
 def add_report():
     current_user_id = get_jwt_identity()
     usuario = Usuario.query.get(current_user_id)
@@ -404,9 +451,9 @@ def add_report():
             id_usuario_psicologo=current_user_id,
             id_estudiante=estudiante_id,
             texto_reporte=texto_reporte["response"],
-            num_publicaciones=0,
+            num_publicaciones=texto_reporte["numero_publicaciones"],
             ruta_archivo_pdf="ruta_de_archivo_ejemplo.pdf",
-            perfil_facebook=estudiante.perfil_facebook_actual,
+            perfil_facebook=texto_reporte["perfilFacebook"],
             prob_depresion=0.0,
             fecha_reporte=datetime.utcnow().date()
         )
@@ -419,20 +466,9 @@ def add_report():
 
 
 
-@report_bp.route("/report/<int:report_id>", methods=["DELETE"])
-@jwt_required()
-def delete_report(report_id):
-    report = Reporte.query.get(report_id)
-    if not report:
-        return jsonify({"msg": "Reporte no encontrado"}), 404
-
-    db.session.delete(report)
-    db.session.commit()
-    return jsonify({"msg": "Reporte eliminado con éxito"}), 200
-
 
 @report_bp.route("/report", methods=["DELETE"])
-@jwt_required()
+@psicologo_required
 def delete_reports_by_student():
     student_boleta = request.json.get("boleta")
     if not student_boleta:
@@ -447,8 +483,22 @@ def delete_reports_by_student():
     return jsonify({"msg": "Reportes del estudiante eliminados con éxito"}), 200
 
 
+
+@report_bp.route("/report/<int:report_id>", methods=["DELETE"])
+@psicologo_required
+def delete_report(report_id):
+    report = Reporte.query.get(report_id)
+    if not report:
+        return jsonify({"msg": "Reporte no encontrado"}), 404
+
+    db.session.delete(report)
+    db.session.commit()
+    return jsonify({"msg": "Reporte eliminado con éxito"}), 200
+
+
+
 @report_bp.route("/report/<int:report_id>", methods=["GET"])
-@jwt_required()
+@psicologo_required
 def get_report(report_id):
     report = Reporte.query.get(report_id)
     if not report:
@@ -469,7 +519,7 @@ def get_report(report_id):
 
 
 @report_bp.route("/report/history", methods=["GET"])
-@jwt_required()
+@psicologo_required
 def get_reports_history():
     student_boleta = request.args.get("boleta")
     if not student_boleta:
@@ -487,4 +537,31 @@ def get_reports_history():
     ]
     return jsonify(reports_data), 200
 
+@report_bp.route("/report/user-reports", methods=["GET"])
+@jwt_required()  # Asegura que solo usuarios autenticados puedan acceder
+def get_user_reports():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"msg": "El ID del usuario es requerido"}), 400
 
+    # Buscar los reportes realizados por el usuario
+    reports = Reporte.query.filter_by(id_usuario_psicologo=user_id).order_by(Reporte.fecha_reporte.desc()).all()
+    if not reports:
+        return jsonify({"msg": "No se encontraron reportes para este usuario"}), 404
+
+    # Serializar los datos de los reportes
+    reports_data = [
+        {
+            "id": report.id,
+            "id_estudiante": report.id_estudiante,
+            "texto_reporte": report.texto_reporte,
+            "num_publicaciones": report.num_publicaciones,
+            "ruta_archivo_pdf": report.ruta_archivo_pdf,
+            "perfil_facebook": report.perfil_facebook,
+            "prob_depresion": report.prob_depresion,
+            "fecha_reporte": report.fecha_reporte.strftime("%Y-%m-%d"),  # Formatear fecha
+        }
+        for report in reports
+    ]
+
+    return jsonify(reports_data), 200
