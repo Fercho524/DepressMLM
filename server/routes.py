@@ -363,7 +363,10 @@ def get_student(boleta):
         "nombre": student.nombre,
         "email_saes": student.email_saes,
         "perfil_facebook_actual": student.perfil_facebook_actual,
-        "prob_depresion": student.prob_depresion
+        "prob_depresion": student.prob_depresion,
+        "intervalo_diagnostico_modelo": student.intervalo_diagnostico_modelo,  # Nuevo campo
+        "ultima_interaccion": student.ultima_interaccion,  # Nuevo campo
+        "objetivos_terapeuticos": student.objetivos_terapeuticos
     }
     return jsonify(student_data), 200
 
@@ -394,6 +397,10 @@ def update_student():
     student.email_saes = data.get("email_saes", student.email_saes)
     student.perfil_facebook_actual = data.get("perfil_facebook_actual", student.perfil_facebook_actual)
     student.prob_depresion = data.get("prob_depresion", student.prob_depresion)
+
+    student.intervalo_diagnostico_modelo = data.get("intervalo_diagnostico_modelo", student.intervalo_diagnostico_modelo)
+    student.ultima_interaccion = data.get("ultima_interaccion", student.ultima_interaccion)
+    student.objetivos_terapeuticos = data.get("objetivos_terapeuticos", student.objetivos_terapeuticos)
 
     db.session.commit()
     return jsonify({"msg": "Estudiante actualizado con éxito"}), 200
@@ -450,12 +457,15 @@ def add_report():
         nuevo_reporte = Reporte(
             id_usuario_psicologo=current_user_id,
             id_estudiante=estudiante_id,
-            texto_reporte=texto_reporte["response"],
+            texto_reporte=texto_reporte["user_data"],
             num_publicaciones=texto_reporte["numero_publicaciones"],
-            ruta_archivo_pdf="ruta_de_archivo_ejemplo.pdf",
+            ruta_archivo_pdf="None",
             perfil_facebook=texto_reporte["perfilFacebook"],
             prob_depresion=0.0,
-            fecha_reporte=datetime.utcnow().date()
+            fecha_reporte=datetime.utcnow().date(),
+            # Nuevos campos
+            nota_psicologo="",
+            nivel_severidad=""
         )
 
         db.session.add(nuevo_reporte)
@@ -513,9 +523,53 @@ def get_report(report_id):
         "ruta_archivo_pdf": report.ruta_archivo_pdf,
         "perfil_facebook": report.perfil_facebook,
         "prob_depresion": report.prob_depresion,
-        "fecha_reporte": report.fecha_reporte
+        "fecha_reporte": report.fecha_reporte,
+        "nota_psicologo": report.nota_psicologo,
     }
     return jsonify(report_data), 200
+
+
+@report_bp.route("/report/<int:report_id>", methods=["PUT"])
+@psicologo_required
+def edit_report(report_id):
+    report = Reporte.query.get(report_id)
+    if not report:
+        return jsonify({"msg": "Reporte no encontrado"}), 404
+
+    # Obtener los datos enviados por el cliente
+    data = request.json
+
+    # Actualizar los campos del reporte si están presentes en los datos
+    if "id_usuario_psicologo" in data:
+        report.id_usuario_psicologo = data["id_usuario_psicologo"]
+    if "id_estudiante" in data:
+        report.id_estudiante = data["id_estudiante"]
+    if "texto_reporte" in data:
+        report.texto_reporte = data["texto_reporte"]
+    if "num_publicaciones" in data:
+        report.num_publicaciones = data["num_publicaciones"]
+    if "ruta_archivo_pdf" in data:
+        report.ruta_archivo_pdf = data["ruta_archivo_pdf"]
+    if "perfil_facebook" in data:
+        report.perfil_facebook = data["perfil_facebook"]
+    if "prob_depresion" in data:
+        report.prob_depresion = data["prob_depresion"]
+    if "fecha_reporte" in data:
+        report.fecha_reporte = data["fecha_reporte"]
+    if "nota_psicologo" in data:  # Nuevo campo
+        report.nota_psicologo = data["nota_psicologo"]
+    if "nivel_severidad" in data:  # Nuevo campo
+        report.nivel_severidad = data["nivel_severidad"]
+    if "hora_reporte" in data:  # Nuevo campo
+        report.hora_reporte = data["hora_reporte"]
+
+    # Guardar los cambios en la base de datos
+    try:
+        db.session.commit()
+        return jsonify({"msg": "Reporte actualizado con éxito"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": f"Error al actualizar el reporte: {str(e)}"}), 500
 
 
 @report_bp.route("/report/history", methods=["GET"])
@@ -531,7 +585,8 @@ def get_reports_history():
             "id": report.id,
             "texto_reporte": report.texto_reporte,
             "num_publicaciones": report.num_publicaciones,
-            "fecha_reporte": report.fecha_reporte
+            "fecha_reporte": report.fecha_reporte,
+            "prob_depresion" : report.prob_depresion
         }
         for report in reports
     ]

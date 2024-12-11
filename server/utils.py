@@ -2,9 +2,9 @@ import requests
 
 
 MODELSERVER_IP = "192.168.100.20"
-
+    
 def get_model_response( profile_link):
-    url = f"http://{MODELSERVER_IP}:5000/inference"  # URL del servidor Flask
+    url = f"http://{MODELSERVER_IP}:5100/inference"  # URL del servidor Flask
 
     # Crear el cuerpo de la solicitud
     payload = {

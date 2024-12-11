@@ -1,3 +1,5 @@
+from datetime import date
+
 from flask_sqlalchemy import SQLAlchemy
 
 from werkzeug.security import generate_password_hash,check_password_hash
@@ -49,8 +51,11 @@ class Reporte(db.Model):
     ruta_archivo_pdf = db.Column(db.String(255), nullable=False)
     perfil_facebook = db.Column(db.String(255))
     prob_depresion = db.Column(db.Float)
-    fecha_reporte = db.Column(db.Date, nullable=False)
+    fecha_reporte = db.Column(db.Date, nullable=False,default=date.today())
 
+    # Datos adicionales
+    nota_psicologo = db.Column(db.Text, nullable=True)
+    
     usuario_psicologo = db.relationship('Usuario', backref='reportes', foreign_keys=[id_usuario_psicologo])
     estudiante = db.relationship('Estudiante', backref='reportes', foreign_keys=[id_estudiante])
 
@@ -63,6 +68,10 @@ class Estudiante(db.Model):
     nombre = db.Column(db.String(255), nullable=False)
     perfil_facebook_actual = db.Column(db.String(255))
     prob_depresion = db.Column(db.Float)
+
+    intervalo_diagnostico_modelo = db.Column(db.Integer, nullable=True) # Cada cierto tiempo se realiza un diagnóstico de forma automática
+    ultima_interaccion = db.Column(db.Date, nullable=True)
+    objetivos_terapeuticos = db.Column(db.Text, nullable=True)
 
     reporte = db.relationship('Reporte', backref='estudiantes', foreign_keys=[ultimo_reporte])
 

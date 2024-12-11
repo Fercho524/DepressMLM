@@ -22,6 +22,12 @@ UserData
 server/__pycache__
 SystemAPI/app/__pycache__
 SystemAPI/app/migrations
+server/venv
 SystemAPI/venv
 app.log
 TestCredentials.md
+frontend/node_modules
+server/__pycache__
+server/app.log
+server/migrations
+testing
